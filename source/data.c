@@ -6,14 +6,29 @@
 /*================================================================
     * Copyright: 2020 John Jackson
 ================================================================*/
+int32_t gui_opts = GS_GUI_OPT_NOTITLE |
+        GS_GUI_OPT_NORESIZE |
+        GS_GUI_OPT_NOMOVE |
+        GS_GUI_OPT_FULLSCREEN |
+        GS_GUI_OPT_FORCESETRECT |
+        GS_GUI_OPT_NORESIZE |
+        GS_GUI_OPT_NOFRAME |
+        GS_GUI_OPT_NOTITLE;
 
 typedef struct {
+    gs_gui_context_t gui;
     gs_command_buffer_t cb;
     gs_immediate_draw_t gsi;
+
     gs_gfxt_pipeline_t pip;
     gs_gfxt_material_t mat;
     gs_gfxt_mesh_t mesh;
     gs_gfxt_texture_t texture;
+
+    gs_gfxt_pipeline_t tstpip;
+    gs_gfxt_material_t tstmat;
+    gs_gfxt_mesh_t tstmesh;
+
     const char* asset_dir;
     gs_camera_t camera;
     gs_vqs xform;

@@ -47,17 +47,16 @@ pipeline {
             },
 
             uniforms {
-                mat4 u_mvp;
+                mat4 u_svp;
             },
 
             out {
                 vec2 uv;
-                vec3 position;
             },
 
             code {
                 void main() {
-                    vec4 pos = u_mvp * vec4(a_position, 1.0);
+                    vec4 pos = u_svp * vec4(a_position, 1.0);
                     uv = a_uv;
                     gl_Position = pos.xyww;
                 }
