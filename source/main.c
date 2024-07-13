@@ -30,6 +30,11 @@ void app_camera_update();
 void app_init()
 {
     app_t* app = gs_user_data(app_t);
+    app->gscene = gs_gfxt_scene_new();
+    app->gscene.name = "test_scene";
+
+    // gs_gfxt_scene_add_mesh_renderable_to(&app->gscene, NULL);
+
     gs_gui_init(&app->gui, gs_platform_main_window());
 
     app->camera = gs_camera_perspective();
@@ -60,6 +65,11 @@ void app_init()
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "textures/TCom_HDRSky045_2K_hdri_skies_tone.png");
     app->texture = gs_gfxt_texture_load_from_file(TMP, NULL, false, false);
 
+
+    gs_gfxt_renderable_desc_t rdesc = { .mesh.hndl = &app->mesh, .material.hndl = &app->mat };
+    gs_gfxt_renderable_t rend = gs_gfxt_renderable_create(&rdesc);
+    gs_gfxt_renderable_insert_into(&app->gscene, rend);
+
     // testmesh
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "pipelines/simple.sf");
     app->tstpip = gs_gfxt_pipeline_load_from_file(TMP);
@@ -79,6 +89,8 @@ void app_update()
     // Cache data for frame
     app_t* app = gs_user_data(app_t);
     gs_command_buffer_t* cb = &app->cb;
+    gs_gfxt_scene_t* scene = &app->gscene;
+
     gs_immediate_draw_t* gsi = &app->gsi;
     gs_gfxt_material_t* mat = &app->mat;
     gs_gfxt_mesh_t* mesh = &app->mesh;
@@ -154,17 +166,13 @@ void app_update()
         // Clear screen
         gs_graphics_clear(cb, &clear);
 
-        // sky sphere
-        gs_gfxt_material_bind(cb, mat);
-        gs_gfxt_material_bind_uniforms(cb, mat);
-
-        gs_gfxt_mesh_draw_material(cb, mesh, mat);
-
         // tst
         gs_gfxt_material_bind(cb, tstmat);
         gs_gfxt_material_bind_uniforms(cb, tstmat);
         gs_gfxt_mesh_draw_material(cb, tstmesh, tstmat);
 
+        //scene
+        gs_gfxt_scene_draw(cb, scene);
         gs_gui_render(gui, cb);
 
         gsi_renderpass_submit_ex(gsi, cb, gs_v4(0.f, 0.f, fbs.x, fbs.y), NULL);
@@ -182,6 +190,7 @@ void app_shutdown()
     gs_immediate_draw_free(&app->gsi);
     gs_command_buffer_free(&app->cb);
     gs_gui_free(&app->gui);
+    gs_gfxt_scene_free(&app->gscene);
 }
 
 gs_app_desc_t gs_main(int32_t argc, char** argv)

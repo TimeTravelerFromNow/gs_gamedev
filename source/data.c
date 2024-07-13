@@ -16,6 +16,7 @@ int32_t gui_opts = GS_GUI_OPT_NOTITLE |
         GS_GUI_OPT_NOTITLE;
 
 typedef struct {
+    gs_gfxt_scene_t gscene;
     gs_gui_context_t gui;
     gs_command_buffer_t cb;
     gs_immediate_draw_t gsi;
