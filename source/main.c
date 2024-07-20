@@ -30,8 +30,12 @@ void app_camera_update();
 void app_init()
 {
     app_t* app = gs_user_data(app_t);
-    // app->gscene = gs_gfxt_scene_new();
-    // gs_gfxt_scene_add_mesh_renderable_to(&app->gscene, NULL);
+    char TMP[256] = {0};
+    app->asset_dir = gs_platform_dir_exists("./assets") ? "./assets" : "../assets";
+
+    const char* wheel_mesh_folder = "./assets/meshes/WaterWheel";
+    app->gscene = gs_gfxt_scene_new();
+    gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", &app->gscene);
 
     gs_gui_init(&app->gui, gs_platform_main_window());
 
@@ -45,8 +49,6 @@ void app_init()
 
     app->cb = gs_command_buffer_new();
     app->gsi = gs_immediate_draw_new(gs_platform_main_window());
-    app->asset_dir = gs_platform_dir_exists("./assets") ? "./assets" : "../assets";
-    char TMP[256] = {0};
 
     // sky sphere
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "pipelines/sky_sphere.sf");
@@ -62,24 +64,26 @@ void app_init()
     });
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "textures/TCom_HDRSky045_2K_hdri_skies_tone.png");
     app->texture = gs_gfxt_texture_load_from_file(TMP, NULL, false, false);
-
-
-    // gs_gfxt_renderable_desc_t rdesc = { .mesh.hndl = &app->mesh, .material.hndl = &app->mat };
-    // gs_gfxt_renderable_t rend = gs_gfxt_renderable_create(&rdesc);
-    // gs_gfxt_renderable_insert_into(&app->gscene, rend);
-
+    
     // testmesh
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "pipelines/simple.sf");
-    app->tstpip = gs_gfxt_pipeline_load_from_file(TMP);
+    app->tstpip = app->gscene.pbr_pip;
     app->tstmat = gs_gfxt_material_create(&(gs_gfxt_material_desc_t){
         .pip_func.hndl = &app->tstpip
     });
+
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "ShapeTypes/ShapeTypes.gltf");
     app->tstmesh = gs_gfxt_mesh_load_from_file(TMP, &(gs_gfxt_mesh_import_options_t){
         .layout = app->tstpip.mesh_layout,
         .size = gs_dyn_array_size(app->tstpip.mesh_layout) * sizeof(gs_gfxt_mesh_layout_t),
         .index_buffer_element_size = app->tstpip.desc.raster.index_buffer_element_size
     });
+    gs_gfxt_renderable_desc_t rdesc = {
+      .material.hndl = &app->tstmat,
+      .mesh.hndl = &app->tstmesh
+    };
+    gs_gfxt_renderable_t rend = gs_gfxt_renderable_create(&rdesc);
+    gs_gfxt_renderable_insert_into(&app->gscene, rend);
 }
 
 void app_update()
@@ -151,8 +155,8 @@ void app_update()
     // sky uniforms
     gs_gfxt_material_set_uniform(mat, "u_svp", &svp);
     gs_gfxt_material_set_uniform(mat, "u_tex", tex);
-
-    gs_gfxt_material_set_uniform(tstmat, "u_mvp", &mvp);
+    
+    // gs_gfxt_material_set_uniform(tstmat, "u_mvp", &mvp);
 
     // Rendering
     gs_graphics_clear_desc_t clear = {.actions = &(gs_graphics_clear_action_t){.color = {0.05f, 0.05, 0.05, 1.f}}};
@@ -164,13 +168,13 @@ void app_update()
         // Clear screen
         gs_graphics_clear(cb, &clear);
 
-        // tst
+        // sky
         gs_gfxt_material_bind(cb, mat);
         gs_gfxt_material_bind_uniforms(cb, mat);
         gs_gfxt_mesh_draw_material(cb, mesh, mat);
-
+        
         //scene
-        // gs_gfxt_scene_draw(cb, scene);
+        gs_gfxt_scene_pbr_draw(cb, scene, mvp);
         gs_gui_render(gui, cb);
 
         gsi_renderpass_submit_ex(gsi, cb, gs_v4(0.f, 0.f, fbs.x, fbs.y), NULL);
@@ -206,7 +210,7 @@ gs_app_desc_t gs_main(int32_t argc, char** argv)
 
 #define SENSITIVITY 0.2f
 static float pitch = 0.f;
-static float speed = 2.f;
+static float speed = 20.f;
 void app_camera_update()
 {
     app_t* app = gs_user_data(app_t);
