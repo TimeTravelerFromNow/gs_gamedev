@@ -35,7 +35,7 @@ void app_init()
 
     const char* wheel_mesh_folder = "./assets/meshes/WaterWheel";
     app->gscene = gs_gfxt_scene_new();
-    gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", &app->gscene);
+    uint32_t ww_id = gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", &app->gscene);
 
     gs_gui_init(&app->gui, gs_platform_main_window());
 
@@ -83,7 +83,7 @@ void app_init()
       .mesh.hndl = &app->tstmesh
     };
     gs_gfxt_renderable_t rend = gs_gfxt_renderable_create(&rdesc);
-    gs_gfxt_renderable_insert_into(&app->gscene, rend);
+    // gs_gfxt_renderable_insert_into(&app->gscene, rend);
 }
 
 void app_update()
@@ -175,7 +175,7 @@ void app_update()
         
         //scene
         gs_gfxt_scene_pbr_draw(cb, scene, mvp);
-        gs_gui_render(gui, cb);
+        // gs_gui_render(gui, cb);
 
         gsi_renderpass_submit_ex(gsi, cb, gs_v4(0.f, 0.f, fbs.x, fbs.y), NULL);
     }
@@ -192,7 +192,7 @@ void app_shutdown()
     gs_immediate_draw_free(&app->gsi);
     gs_command_buffer_free(&app->cb);
     gs_gui_free(&app->gui);
-    // gs_gfxt_scene_free(&app->gscene);
+    gs_gfxt_scene_free(&app->gscene);
 }
 
 gs_app_desc_t gs_main(int32_t argc, char** argv)
@@ -210,7 +210,7 @@ gs_app_desc_t gs_main(int32_t argc, char** argv)
 
 #define SENSITIVITY 0.2f
 static float pitch = 0.f;
-static float speed = 20.f;
+static float speed = 2.f;
 void app_camera_update()
 {
     app_t* app = gs_user_data(app_t);
