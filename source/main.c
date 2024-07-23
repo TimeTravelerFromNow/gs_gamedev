@@ -30,12 +30,15 @@ void app_camera_update();
 void app_init()
 {
     app_t* app = gs_user_data(app_t);
+    app->scene = gs_gfxt_scene_new();
+    gs_gfxt_scene_t* scene = &app->scene;
+
     char TMP[256] = {0};
     app->asset_dir = gs_platform_dir_exists("./assets") ? "./assets" : "../assets";
 
     const char* wheel_mesh_folder = "./assets/meshes/WaterWheel";
-    app->gscene = gs_gfxt_scene_new();
-    uint32_t ww_id = gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", &app->gscene);
+
+    uint32_t ww_id = gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", scene);
 
     gs_gui_init(&app->gui, gs_platform_main_window());
 
@@ -64,42 +67,20 @@ void app_init()
     });
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "textures/TCom_HDRSky045_2K_hdri_skies_tone.png");
     app->texture = gs_gfxt_texture_load_from_file(TMP, NULL, false, false);
-    
-    // testmesh
-    gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "pipelines/simple.sf");
-    app->tstpip = app->gscene.pbr_pip;
-    app->tstmat = gs_gfxt_material_create(&(gs_gfxt_material_desc_t){
-        .pip_func.hndl = &app->tstpip
-    });
-
-    gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "ShapeTypes/ShapeTypes.gltf");
-    app->tstmesh = gs_gfxt_mesh_load_from_file(TMP, &(gs_gfxt_mesh_import_options_t){
-        .layout = app->tstpip.mesh_layout,
-        .size = gs_dyn_array_size(app->tstpip.mesh_layout) * sizeof(gs_gfxt_mesh_layout_t),
-        .index_buffer_element_size = app->tstpip.desc.raster.index_buffer_element_size
-    });
-    gs_gfxt_renderable_desc_t rdesc = {
-      .material.hndl = &app->tstmat,
-      .mesh.hndl = &app->tstmesh
-    };
-    gs_gfxt_renderable_t rend = gs_gfxt_renderable_create(&rdesc);
-    // gs_gfxt_renderable_insert_into(&app->gscene, rend);
 }
 
 void app_update()
 {
     // Cache data for frame
     app_t* app = gs_user_data(app_t);
+
+    gs_gfxt_scene_t* scene = &app->scene;
     gs_command_buffer_t* cb = &app->cb;
-    gs_gfxt_scene_t* scene = &app->gscene;
 
     gs_immediate_draw_t* gsi = &app->gsi;
     gs_gfxt_material_t* mat = &app->mat;
     gs_gfxt_mesh_t* mesh = &app->mesh;
     gs_gfxt_texture_t* tex = &app->texture;
-
-    gs_gfxt_material_t* tstmat = &app->tstmat;
-    gs_gfxt_mesh_t* tstmesh = &app->tstmesh;
 
     gs_camera_t* cam = &app->camera;
     gs_gui_context_t* gui = &app->gui;
@@ -134,7 +115,7 @@ void app_update()
 
     gs_mat4 svp = gs_camera_get_sky_view_projection(cam, fbs.x, fbs.y);
     gs_mat4 mvp = gs_camera_get_view_projection(cam, fbs.x, fbs.y);
-
+    mvp = gs_mat4_mul(mvp, gs_mat4_scale(10, 10, 10));
     {
     gs_contact_info_t res = {0};
     ray_cast(&aabb, &app->camera,  &app->xform, &res, fbs);
@@ -192,7 +173,7 @@ void app_shutdown()
     gs_immediate_draw_free(&app->gsi);
     gs_command_buffer_free(&app->cb);
     gs_gui_free(&app->gui);
-    gs_gfxt_scene_free(&app->gscene);
+    gs_gfxt_scene_free(&app->scene);
 }
 
 gs_app_desc_t gs_main(int32_t argc, char** argv)

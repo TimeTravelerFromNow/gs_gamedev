@@ -16,7 +16,6 @@ int32_t gui_opts = GS_GUI_OPT_NOTITLE |
         GS_GUI_OPT_NOTITLE;
 
 typedef struct {
-    gs_gfxt_scene_t gscene;
     gs_gui_context_t gui;
     gs_command_buffer_t cb;
     gs_immediate_draw_t gsi;
@@ -26,13 +25,11 @@ typedef struct {
     gs_gfxt_mesh_t mesh;
     gs_gfxt_texture_t texture;
 
-    gs_gfxt_pipeline_t tstpip;
-    gs_gfxt_material_t tstmat;
-    gs_gfxt_mesh_t tstmesh;
-
     const char* asset_dir;
     gs_camera_t camera;
     gs_vqs xform;
+    
+    gs_gfxt_scene_t scene;
 } app_t;
 
 void ortho3(gs_vec3* left, gs_vec3* up, gs_vec3 v)
