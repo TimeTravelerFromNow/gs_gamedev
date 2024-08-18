@@ -23,8 +23,6 @@
 
 #include "data.c"
 
-gs_aabb_t aabb = {0};
-
 void app_camera_update();
 
 void app_init()
@@ -43,15 +41,7 @@ void app_init()
     gs_gui_init(&app->gui, gs_platform_main_window());
 
     app->camera = gs_camera_perspective();
-    app->xform = (gs_vqs) {
-          .translation = gs_v3(0.f, 0.f, -2.f),
-          .rotation = gs_quat_default(),
-          .scale = gs_v3s(1.f)
-    };
-    aabb = gs_aabb(.min = gs_v3s(-0.5f), .max = gs_v3s(0.5f));
-
     app->cb = gs_command_buffer_new();
-    app->gsi = gs_immediate_draw_new(gs_platform_main_window());
 
     // sky sphere
     gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "pipelines/sky_sphere.sf");
@@ -76,7 +66,6 @@ void app_update()
     gs_gfxt_scene_t* scene = &app->scene;
     gs_command_buffer_t* cb = &app->cb;
 
-    gs_immediate_draw_t* gsi = &app->gsi;
     gs_gfxt_material_t* mat = &app->mat;
     gs_gfxt_mesh_t* mesh = &app->mesh;
     gs_gfxt_texture_t* tex = &app->texture;
@@ -90,14 +79,6 @@ void app_update()
 
     const float dt = gs_platform_delta_time();
 
-    // Rotate xform over time
-    app->xform.rotation = gs_quat_mul_list(3,
-        gs_quat_angle_axis(t * 0.0001f, GS_XAXIS),
-        gs_quat_angle_axis(t * 0.0002f, GS_YAXIS),
-        gs_quat_angle_axis(t * 0.0003f, GS_ZAXIS)
-    );
-
-
     if (gs_platform_key_pressed(GS_KEYCODE_ESC))
     {
         gs_quit();
@@ -105,8 +86,8 @@ void app_update()
 
     // Camera for scene
     if (gs_platform_mouse_down(GS_MOUSE_RBUTTON)) {
-    gs_platform_lock_mouse(gs_platform_main_window(), true);
-    app_camera_update();
+        gs_platform_lock_mouse(gs_platform_main_window(), true);
+        app_camera_update();
     }
     else {
         gs_platform_lock_mouse(gs_platform_main_window(), false);
@@ -115,22 +96,6 @@ void app_update()
     gs_mat4 svp = gs_camera_get_sky_view_projection(cam, fbs.x, fbs.y);
     gs_mat4 mvp = gs_camera_get_view_projection(cam, fbs.x, fbs.y);
     mvp = gs_mat4_mul(mvp, gs_mat4_scale(10, 10, 10));
-    {
-    gs_contact_info_t res = {0};
-    ray_cast(&aabb, &app->camera,  &app->xform, &res, fbs);
-    // Immediate draw scene
-    gsi_camera(gsi, &app->camera, (uint32_t)fbs.x, (uint32_t)fbs.y);
-    gsi_depth_enabled(gsi, true);
-    gsi_face_cull_enabled(gsi, true);
-    gsi_push_matrix(gsi, GSI_MATRIX_MODELVIEW);
-    gsi_mul_matrix(gsi, gs_vqs_to_mat4(&app->xform));
-    gs_color_t col = res.hit ? GS_COLOR_RED : GS_COLOR_WHITE;
-
-    gs_vec3 hd = gs_vec3_scale(gs_vec3_sub(aabb.max, aabb.min), 0.5f);
-    gs_vec3 c = gs_vec3_add(aabb.min, hd);
-    gsi_box(gsi, c.x, c.y, c.z, hd.x, hd.y, hd.z, col.r, col.g, col.b, col.a, GS_GRAPHICS_PRIMITIVE_LINES);
-    gsi_pop_matrix(gsi);
-    }
 
     // sky uniforms
     gs_gfxt_material_set_uniform(mat, "u_svp", &svp);
@@ -156,8 +121,6 @@ void app_update()
         //scene
         gs_gfxt_default_pbr_pipeline_draw(cb, scene, mvp);
         // gs_gui_render(gui, cb);
-
-        gsi_renderpass_submit_ex(gsi, cb, gs_v4(0.f, 0.f, fbs.x, fbs.y), NULL);
     }
     gs_graphics_renderpass_end(cb);
 
@@ -169,7 +132,6 @@ void app_shutdown()
 {
     // free
     app_t* app = gs_user_data(app_t);
-    gs_immediate_draw_free(&app->gsi);
     gs_command_buffer_free(&app->cb);
     gs_gui_free(&app->gui);
     gs_gfxt_scene_free(&app->scene);
@@ -190,7 +152,7 @@ gs_app_desc_t gs_main(int32_t argc, char** argv)
 
 #define SENSITIVITY 0.2f
 static float pitch = 0.f;
-static float speed = 100.f;
+static float speed = 2000.f;
 void app_camera_update()
 {
     app_t* app = gs_user_data(app_t);
