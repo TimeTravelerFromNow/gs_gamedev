@@ -56,8 +56,8 @@
 	"images":[
 		{
 			"mimeType":"image/png",
-			"name":"TCom_HDRSky045_2K_hdri_skies_tone",
-			"uri":"TCom_HDRSky045_2K_hdri_skies_tone.png"
+			"name":"blue-sky",
+			"uri":"blue-sky.png"
 		}
 	],
 	"accessors":[

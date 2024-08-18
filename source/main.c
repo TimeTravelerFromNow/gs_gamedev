@@ -30,7 +30,7 @@ void app_camera_update();
 void app_init()
 {
     app_t* app = gs_user_data(app_t);
-    app->scene = gs_gfxt_scene_new();
+    app->scene = (gs_gfxt_scene_t){ .pbr_pip = gs_gfxt_default_pbr_pipeline() };
     gs_gfxt_scene_t* scene = &app->scene;
 
     char TMP[256] = {0};
@@ -38,7 +38,7 @@ void app_init()
 
     const char* wheel_mesh_folder = "./assets/meshes/WaterWheel";
 
-    uint32_t ww_id = gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", scene);
+    gs_gfxt_load_into_scene_from_file(wheel_mesh_folder, "WaterWheel.gltf", scene);
 
     gs_gui_init(&app->gui, gs_platform_main_window());
 
@@ -59,13 +59,12 @@ void app_init()
     app->mat = gs_gfxt_material_create(&(gs_gfxt_material_desc_t){
         .pip_func.hndl = &app->pip
     });
-    gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "meshes/sphere.gltf");
-    app->mesh = gs_gfxt_mesh_load_from_file(TMP, &(gs_gfxt_mesh_import_options_t){
+    app->mesh = gs_gfxt_mesh_load_from_file(app->asset_dir, "meshes/sphere.gltf", &(gs_gfxt_mesh_import_options_t){
         .layout = app->pip.mesh_layout,
         .size = gs_dyn_array_size(app->pip.mesh_layout) * sizeof(gs_gfxt_mesh_layout_t),
         .index_buffer_element_size = app->pip.desc.raster.index_buffer_element_size
     });
-    gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "textures/TCom_HDRSky045_2K_hdri_skies_tone.png");
+    gs_snprintf(TMP, sizeof(TMP), "%s/%s", app->asset_dir, "textures/blue-sky.png");
     app->texture = gs_gfxt_texture_load_from_file(TMP, NULL, false, false);
 }
 
@@ -155,7 +154,7 @@ void app_update()
         gs_gfxt_mesh_draw_material(cb, mesh, mat);
         
         //scene
-        gs_gfxt_scene_pbr_draw(cb, scene, mvp);
+        gs_gfxt_default_pbr_pipeline_draw(cb, scene, mvp);
         // gs_gui_render(gui, cb);
 
         gsi_renderpass_submit_ex(gsi, cb, gs_v4(0.f, 0.f, fbs.x, fbs.y), NULL);
@@ -191,7 +190,7 @@ gs_app_desc_t gs_main(int32_t argc, char** argv)
 
 #define SENSITIVITY 0.2f
 static float pitch = 0.f;
-static float speed = 2.f;
+static float speed = 100.f;
 void app_camera_update()
 {
     app_t* app = gs_user_data(app_t);
